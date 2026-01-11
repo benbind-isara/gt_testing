@@ -11,55 +11,105 @@
         <header>
             <h1>📝 Task Manager</h1>
             <p class="subtitle">Stay organized and get things done</p>
-        </header>
-        
-        <section class="input-card">
-            <div class="input-section">
-                <input 
-                    type="text" 
-                    id="taskInput" 
-                    placeholder="Task title (required)" 
-                    autocomplete="off"
-                >
-                <input 
-                    type="date" 
-                    id="dueDateInput" 
-                    aria-label="Due date (required)"
-                >
-                <textarea 
-                    id="notesInput" 
-                    rows="1" 
-                    placeholder="Notes (optional)"></textarea>
-                <button id="addTaskBtn">Add Task</button>
+            <div class="view-toggle">
+                <button id="tasksViewBtn" class="toggle-btn active">Tasks & Calendar</button>
+                <button id="gamesViewBtn" class="toggle-btn">Games</button>
             </div>
-            <p class="input-hint">Add a title and due date; notes are optional.</p>
-            <p id="validationMessage" class="validation-message" aria-live="polite"></p>
-        </section>
+        </header>
 
-        <div class="planner">
-            <section class="calendar-card">
-                <div class="calendar-header">
-                    <button id="prevMonth" class="icon-btn" aria-label="Previous month">‹</button>
-                    <div>
-                        <p class="calendar-subtitle">Calendar</p>
-                        <h2 id="calendarLabel"></h2>
+        <div id="tasksView" class="view active">
+            <section class="input-card">
+                <div class="input-section">
+                    <input 
+                        type="text" 
+                        id="taskInput" 
+                        placeholder="Task title (required)" 
+                        autocomplete="off"
+                    >
+                    <input 
+                        type="date" 
+                        id="dueDateInput" 
+                        aria-label="Due date (required)"
+                    >
+                    <textarea 
+                        id="notesInput" 
+                        rows="1" 
+                        placeholder="Notes (optional)"></textarea>
+                    <button id="addTaskBtn">Add Task</button>
+                </div>
+                <p class="input-hint">Add a title and due date; notes are optional.</p>
+                <p id="validationMessage" class="validation-message" aria-live="polite"></p>
+            </section>
+
+            <div class="planner">
+                <section class="calendar-card">
+                    <div class="calendar-header">
+                        <button id="prevMonth" class="icon-btn" aria-label="Previous month">‹</button>
+                        <div>
+                            <p class="calendar-subtitle">Calendar</p>
+                            <h2 id="calendarLabel"></h2>
+                        </div>
+                        <button id="nextMonth" class="icon-btn" aria-label="Next month">›</button>
                     </div>
-                    <button id="nextMonth" class="icon-btn" aria-label="Next month">›</button>
-                </div>
-                <div class="calendar-grid" id="calendarGrid" aria-label="Calendar dates"></div>
-                <div class="calendar-footer">
-                    <span id="filterInfo">Showing all tasks</span>
-                    <button id="clearFilter" class="clear-btn" type="button">Clear date filter</button>
-                </div>
-            </section>
+                    <div class="calendar-grid" id="calendarGrid" aria-label="Calendar dates"></div>
+                    <div class="calendar-footer">
+                        <span id="filterInfo">Showing all tasks</span>
+                        <button id="clearFilter" class="clear-btn" type="button">Clear date filter</button>
+                    </div>
+                </section>
 
-            <section class="tasks-card">
-                <div class="stats">
-                    <span id="taskCount">0 tasks</span>
-                    <button id="clearCompleted" class="clear-btn">Clear Completed</button>
-                </div>
-                <ul id="taskList" class="task-list"></ul>
-            </section>
+                <section class="tasks-card">
+                    <div class="stats">
+                        <span id="taskCount">0 tasks</span>
+                        <button id="clearCompleted" class="clear-btn">Clear Completed</button>
+                    </div>
+                    <ul id="taskList" class="task-list"></ul>
+                </section>
+            </div>
+        </div>
+
+        <div id="gamesView" class="view">
+            <div class="games-grid">
+                <section class="game-card">
+                    <div class="game-header">
+                        <div>
+                            <p class="game-subtitle">Two-player</p>
+                            <h2>Pong</h2>
+                        </div>
+                        <div class="scoreboard">
+                            <span>Left: <strong id="pongScoreLeft">0</strong></span>
+                            <span>Right: <strong id="pongScoreRight">0</strong></span>
+                        </div>
+                    </div>
+                    <canvas id="pongCanvas" width="700" height="380"></canvas>
+                    <div class="game-controls">
+                        <span>Controls: Left W/S • Right ↑/↓</span>
+                        <div class="game-buttons">
+                            <button id="pongReset" class="clear-btn">Reset</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="game-card">
+                    <div class="game-header">
+                        <div>
+                            <p class="game-subtitle">Single-player</p>
+                            <h2>Snake</h2>
+                        </div>
+                        <div class="scoreboard">
+                            <span>Score: <strong id="snakeScore">0</strong></span>
+                        </div>
+                    </div>
+                    <canvas id="snakeCanvas" width="700" height="380"></canvas>
+                    <div class="game-controls">
+                        <span>Controls: Arrow keys to move</span>
+                        <div class="game-buttons">
+                            <button id="snakeStart" class="clear-btn">Start</button>
+                            <button id="snakeRestart" class="clear-btn">Restart</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
     

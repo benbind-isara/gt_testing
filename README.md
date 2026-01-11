@@ -7,6 +7,7 @@ A lightweight, offline-ready to-do app with due dates and a calendar view, built
 - ✅ Add tasks with required title and due date; include optional notes
 - ✅ Month calendar highlights days with tasks; click a date to filter tasks for that day and clear the filter anytime
 - ✅ Task list shows due dates, supports complete/incomplete toggle, delete, and clear completed
+- ✅ Games section with Pong (two-player) and Snake (single-player) plus scoring and reset controls
 - ✅ Persistent storage in browser `localStorage` (including due dates and notes)
 - ✅ Responsive layout for desktop and mobile
 
@@ -25,6 +26,7 @@ A lightweight, offline-ready to-do app with due dates and a calendar view, built
 2. Click **Add Task** (or press Enter while focused on a field).
 3. Use the calendar to spot dates with tasks. Click a date to filter the list to that day, and use **Clear date filter** to show everything again.
 4. Toggle completion with the checkbox, delete individual tasks, or use **Clear Completed** to remove all finished tasks.
+5. Switch to the **Games** view to play Pong (W/S and arrow keys) or Snake (arrow keys). Use the reset/start buttons to restart rounds and return to the Tasks view anytime via the toggle at the top.
 
 ## Files
 

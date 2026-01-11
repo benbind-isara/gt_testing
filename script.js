@@ -1,3 +1,40 @@
+class App {
+    constructor() {
+        this.tasksView = document.getElementById('tasksView');
+        this.gamesView = document.getElementById('gamesView');
+        this.tasksViewBtn = document.getElementById('tasksViewBtn');
+        this.gamesViewBtn = document.getElementById('gamesViewBtn');
+
+        this.taskManager = new TaskManager();
+        this.pongGame = new PongGame();
+        this.snakeGame = new SnakeGame();
+
+        this.bindNavigation();
+        this.setView('tasks');
+
+        window.addEventListener('resize', () => {
+            this.pongGame.resizeCanvas();
+            this.snakeGame.resizeCanvas();
+        });
+    }
+
+    bindNavigation() {
+        this.tasksViewBtn.addEventListener('click', () => this.setView('tasks'));
+        this.gamesViewBtn.addEventListener('click', () => this.setView('games'));
+    }
+
+    setView(view) {
+        const isTasks = view === 'tasks';
+        this.tasksView.classList.toggle('active', isTasks);
+        this.gamesView.classList.toggle('active', !isTasks);
+        this.tasksViewBtn.classList.toggle('active', isTasks);
+        this.gamesViewBtn.classList.toggle('active', !isTasks);
+
+        this.pongGame.setActive(!isTasks);
+        this.snakeGame.setActive(!isTasks);
+    }
+}
+
 // Task Manager Application
 class TaskManager {
     constructor() {
@@ -290,7 +327,399 @@ class TaskManager {
     }
 }
 
+class PongGame {
+    constructor() {
+        this.canvas = document.getElementById('pongCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.scoreLeftEl = document.getElementById('pongScoreLeft');
+        this.scoreRightEl = document.getElementById('pongScoreRight');
+        this.resetBtn = document.getElementById('pongReset');
+
+        this.active = false;
+        this.frameId = null;
+        this.lastTime = 0;
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+
+        this.keys = { w: false, s: false, ArrowUp: false, ArrowDown: false };
+        this.paddleHeight = 70;
+        this.paddleWidth = 10;
+        this.ballSize = 12;
+        this.paddleSpeed = 360;
+        this.ballSpeed = 320;
+        this.scoreLeft = 0;
+        this.scoreRight = 0;
+
+        this.resetGame();
+        this.bindEvents();
+        this.resizeCanvas();
+        this.draw();
+    }
+
+    bindEvents() {
+        document.addEventListener('keydown', (e) => {
+            if (!this.active) return;
+            if (e.key in this.keys) {
+                this.keys[e.key] = true;
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (!this.active) return;
+            if (e.key in this.keys) {
+                this.keys[e.key] = false;
+            }
+        });
+
+        this.resetBtn.addEventListener('click', () => this.resetGame());
+    }
+
+    setActive(isActive) {
+        this.active = isActive;
+        if (isActive && !this.frameId) {
+            this.lastTime = performance.now();
+            this.frameId = requestAnimationFrame((t) => this.loop(t));
+        } else if (!isActive && this.frameId) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = null;
+        }
+    }
+
+    resizeCanvas() {
+        const rect = this.canvas.getBoundingClientRect();
+        const width = rect.width;
+        const height = Math.max(240, Math.min(420, Math.round(width * 0.55)));
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.width = width;
+        this.height = height;
+        if (this.leftPaddle) {
+            this.leftPaddle.x = 16;
+            this.leftPaddle.y = Math.min(this.leftPaddle.y, this.height - this.paddleHeight);
+        }
+        if (this.rightPaddle) {
+            this.rightPaddle.x = this.width - 16 - this.paddleWidth;
+            this.rightPaddle.y = Math.min(this.rightPaddle.y, this.height - this.paddleHeight);
+        }
+        if (this.ball) {
+            this.ball.x = Math.min(Math.max(this.ball.x, this.ballSize / 2), this.width - this.ballSize / 2);
+            this.ball.y = Math.min(Math.max(this.ball.y, this.ballSize / 2), this.height - this.ballSize / 2);
+        }
+        this.draw();
+    }
+
+    resetGame() {
+        this.scoreLeft = 0;
+        this.scoreRight = 0;
+        this.leftPaddle = { x: 16, y: this.height / 2 - this.paddleHeight / 2 };
+        this.rightPaddle = { x: this.width - 16 - this.paddleWidth, y: this.height / 2 - this.paddleHeight / 2 };
+        this.resetBall();
+        this.updateScoreboard();
+    }
+
+    resetBall(direction = 1) {
+        this.ball = {
+            x: this.width / 2,
+            y: this.height / 2,
+            vx: this.ballSpeed * direction * (Math.random() > 0.5 ? 1 : -1),
+            vy: (Math.random() * 2 - 1) * (this.ballSpeed * 0.6)
+        };
+    }
+
+    loop(timestamp) {
+        if (!this.active) {
+            this.frameId = null;
+            return;
+        }
+
+        const delta = (timestamp - this.lastTime) / 1000;
+        this.lastTime = timestamp;
+        this.update(delta);
+        this.draw();
+        this.frameId = requestAnimationFrame((t) => this.loop(t));
+    }
+
+    update(delta) {
+        // Move paddles
+        if (this.keys.w) this.leftPaddle.y -= this.paddleSpeed * delta;
+        if (this.keys.s) this.leftPaddle.y += this.paddleSpeed * delta;
+        if (this.keys.ArrowUp) this.rightPaddle.y -= this.paddleSpeed * delta;
+        if (this.keys.ArrowDown) this.rightPaddle.y += this.paddleSpeed * delta;
+
+        this.leftPaddle.y = Math.max(0, Math.min(this.height - this.paddleHeight, this.leftPaddle.y));
+        this.rightPaddle.y = Math.max(0, Math.min(this.height - this.paddleHeight, this.rightPaddle.y));
+
+        // Move ball
+        this.ball.x += this.ball.vx * delta;
+        this.ball.y += this.ball.vy * delta;
+
+        // Collide with top/bottom
+        if (this.ball.y - this.ballSize / 2 <= 0 || this.ball.y + this.ballSize / 2 >= this.height) {
+            this.ball.vy *= -1;
+        }
+
+        // Collide with paddles
+        this.handlePaddleCollision(this.leftPaddle, 1);
+        this.handlePaddleCollision(this.rightPaddle, -1);
+
+        // Score
+        if (this.ball.x < 0) {
+            this.scoreRight += 1;
+            this.updateScoreboard();
+            this.resetBall(1);
+        } else if (this.ball.x > this.width) {
+            this.scoreLeft += 1;
+            this.updateScoreboard();
+            this.resetBall(-1);
+        }
+    }
+
+    handlePaddleCollision(paddle, direction) {
+        const withinX = direction === 1
+            ? this.ball.x - this.ballSize / 2 <= paddle.x + this.paddleWidth && this.ball.x > paddle.x
+            : this.ball.x + this.ballSize / 2 >= paddle.x && this.ball.x < paddle.x + this.paddleWidth;
+
+        const withinY = this.ball.y + this.ballSize / 2 >= paddle.y && this.ball.y - this.ballSize / 2 <= paddle.y + this.paddleHeight;
+
+        if (withinX && withinY) {
+            this.ball.vx = Math.abs(this.ball.vx) * direction * -1;
+            const hitPos = (this.ball.y - paddle.y) / this.paddleHeight - 0.5;
+            this.ball.vy = hitPos * this.ballSpeed * 1.2;
+        }
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // Mid line
+        this.ctx.setLineDash([6, 10]);
+        this.ctx.strokeStyle = '#e0e0e0';
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.width / 2, 0);
+        this.ctx.lineTo(this.width / 2, this.height);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+
+        // Paddles
+        this.ctx.fillStyle = '#667eea';
+        this.ctx.fillRect(this.leftPaddle.x, this.leftPaddle.y, this.paddleWidth, this.paddleHeight);
+        this.ctx.fillRect(this.rightPaddle.x, this.rightPaddle.y, this.paddleWidth, this.paddleHeight);
+
+        // Ball
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x, this.ball.y, this.ballSize / 2, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#333';
+        this.ctx.fill();
+    }
+
+    updateScoreboard() {
+        this.scoreLeftEl.textContent = this.scoreLeft;
+        this.scoreRightEl.textContent = this.scoreRight;
+    }
+}
+
+class SnakeGame {
+    constructor() {
+        this.canvas = document.getElementById('snakeCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.scoreEl = document.getElementById('snakeScore');
+        this.startBtn = document.getElementById('snakeStart');
+        this.restartBtn = document.getElementById('snakeRestart');
+
+        this.cellSize = 18;
+        this.cols = 0;
+        this.rows = 0;
+        this.direction = { x: 1, y: 0 };
+        this.pendingDirection = { x: 1, y: 0 };
+        this.snake = [];
+        this.food = null;
+        this.score = 0;
+        this.isRunning = false;
+        this.gameOver = false;
+        this.speedMs = 120;
+        this.lastTick = 0;
+        this.frameId = null;
+        this.active = false;
+
+        this.resizeCanvas();
+        this.resetGame();
+        this.bindEvents();
+        this.draw();
+    }
+
+    bindEvents() {
+        document.addEventListener('keydown', (e) => {
+            if (!this.active) return;
+            if (e.key === 'ArrowUp' && this.direction.y !== 1) this.pendingDirection = { x: 0, y: -1 };
+            else if (e.key === 'ArrowDown' && this.direction.y !== -1) this.pendingDirection = { x: 0, y: 1 };
+            else if (e.key === 'ArrowLeft' && this.direction.x !== 1) this.pendingDirection = { x: -1, y: 0 };
+            else if (e.key === 'ArrowRight' && this.direction.x !== -1) this.pendingDirection = { x: 1, y: 0 };
+        });
+
+        this.startBtn.addEventListener('click', () => this.start());
+        this.restartBtn.addEventListener('click', () => this.resetGame(true));
+    }
+
+    setActive(isActive) {
+        this.active = isActive;
+        if (!isActive && this.frameId) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = null;
+        } else if (isActive && this.isRunning && !this.frameId) {
+            this.lastTick = performance.now();
+            this.frameId = requestAnimationFrame((t) => this.loop(t));
+        }
+    }
+
+    resizeCanvas() {
+        const rect = this.canvas.getBoundingClientRect();
+        const width = rect.width;
+        const height = Math.max(220, Math.min(420, Math.round(width * 0.55)));
+        this.cols = Math.max(12, Math.floor(width / this.cellSize));
+        this.rows = Math.max(12, Math.floor(height / this.cellSize));
+        this.canvas.width = this.cols * this.cellSize;
+        this.canvas.height = this.rows * this.cellSize;
+    }
+
+    resetGame(keepActive = false) {
+        this.score = 0;
+        this.direction = { x: 1, y: 0 };
+        this.pendingDirection = { x: 1, y: 0 };
+        const startX = Math.floor(this.cols / 4);
+        const startY = Math.floor(this.rows / 2);
+        this.snake = [
+            { x: startX, y: startY },
+            { x: startX - 1, y: startY },
+            { x: startX - 2, y: startY }
+        ];
+        this.placeFood();
+        this.scoreEl.textContent = this.score;
+        this.gameOver = false;
+        this.isRunning = keepActive;
+        this.lastTick = performance.now();
+        if (this.active && this.isRunning) {
+            this.frameId = requestAnimationFrame((t) => this.loop(t));
+        } else {
+            this.draw();
+        }
+    }
+
+    start() {
+        if (this.gameOver) {
+            this.resetGame(true);
+            return;
+        }
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.lastTick = performance.now();
+            if (this.active) {
+                this.frameId = requestAnimationFrame((t) => this.loop(t));
+            }
+        }
+    }
+
+    loop(timestamp) {
+        if (!this.active) {
+            this.frameId = null;
+            return;
+        }
+        const delta = timestamp - this.lastTick;
+        if (delta >= this.speedMs) {
+            this.update();
+            this.lastTick = timestamp;
+        }
+        this.draw();
+        this.frameId = requestAnimationFrame((t) => this.loop(t));
+    }
+
+    update() {
+        if (!this.isRunning || this.gameOver) return;
+        this.direction = this.pendingDirection;
+        const newHead = {
+            x: this.snake[0].x + this.direction.x,
+            y: this.snake[0].y + this.direction.y
+        };
+
+        // collisions
+        if (
+            newHead.x < 0 || newHead.x >= this.cols ||
+            newHead.y < 0 || newHead.y >= this.rows ||
+            this.snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)
+        ) {
+            this.gameOver = true;
+            this.isRunning = false;
+            return;
+        }
+
+        this.snake.unshift(newHead);
+
+        if (this.food && newHead.x === this.food.x && newHead.y === this.food.y) {
+            this.score += 10;
+            this.scoreEl.textContent = this.score;
+            this.placeFood();
+        } else {
+            this.snake.pop();
+        }
+    }
+
+    placeFood() {
+        let position;
+        do {
+            position = {
+                x: Math.floor(Math.random() * this.cols),
+                y: Math.floor(Math.random() * this.rows)
+            };
+        } while (this.snake.some(seg => seg.x === position.x && seg.y === position.y));
+        this.food = position;
+    }
+
+    draw() {
+        this.ctx.fillStyle = '#fdfdfd';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // grid lines
+        this.ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+        for (let x = 0; x <= this.cols; x++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x * this.cellSize, 0);
+            this.ctx.lineTo(x * this.cellSize, this.canvas.height);
+            this.ctx.stroke();
+        }
+        for (let y = 0; y <= this.rows; y++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y * this.cellSize);
+            this.ctx.lineTo(this.canvas.width, y * this.cellSize);
+            this.ctx.stroke();
+        }
+
+        // snake
+        this.ctx.fillStyle = '#667eea';
+        this.snake.forEach((seg, index) => {
+            const opacity = 1 - index * 0.02;
+            this.ctx.fillStyle = `rgba(102, 126, 234, ${Math.max(0.4, opacity)})`;
+            this.ctx.fillRect(seg.x * this.cellSize, seg.y * this.cellSize, this.cellSize, this.cellSize);
+        });
+
+        // food
+        if (this.food) {
+            this.ctx.fillStyle = '#ff6b6b';
+            const radius = this.cellSize / 2;
+            this.ctx.beginPath();
+            this.ctx.arc(this.food.x * this.cellSize + radius, this.food.y * this.cellSize + radius, radius - 2, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
+        if (this.gameOver) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('Game Over - Restart to play again', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    }
+}
+
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new TaskManager();
+    new App();
 });
