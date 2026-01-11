@@ -353,6 +353,7 @@ class PongGame {
         this.ballSpeed = 320;
         this.scoreLeft = 0;
         this.scoreRight = 0;
+        this.ballMaxBounceAngle = Math.PI / 3;
 
         this.resetGame();
         this.bindEvents();
@@ -487,16 +488,31 @@ class PongGame {
     }
 
     handlePaddleCollision(paddle, direction) {
-        const withinX = direction === 1
-            ? this.ball.x - this.ballSize / 2 <= paddle.x + this.paddleWidth && this.ball.x > paddle.x
-            : this.ball.x + this.ballSize / 2 >= paddle.x && this.ball.x < paddle.x + this.paddleWidth;
+        const ballLeft = this.ball.x - this.ballSize / 2;
+        const ballRight = this.ball.x + this.ballSize / 2;
+        const ballTop = this.ball.y - this.ballSize / 2;
+        const ballBottom = this.ball.y + this.ballSize / 2;
+        const padLeft = paddle.x;
+        const padRight = paddle.x + this.paddleWidth;
+        const padTop = paddle.y;
+        const padBottom = paddle.y + this.paddleHeight;
 
-        const withinY = this.ball.y + this.ballSize / 2 >= paddle.y && this.ball.y - this.ballSize / 2 <= paddle.y + this.paddleHeight;
+        const overlaps = ballRight >= padLeft && ballLeft <= padRight && ballBottom >= padTop && ballTop <= padBottom;
+        if (overlaps) {
+            // Position correction to paddle face
+            if (direction === 1) {
+                this.ball.x = padRight + this.ballSize / 2;
+            } else {
+                this.ball.x = padLeft - this.ballSize / 2;
+            }
 
-        if (withinX && withinY) {
-            this.ball.vx = Math.abs(this.ball.vx) * direction * -1;
-            const hitPos = (this.ball.y - paddle.y) / this.paddleHeight - 0.5;
-            this.ball.vy = hitPos * this.ballSpeed * 1.2;
+            // Compute bounce angle based on hit position
+            const relativeIntersectY = (paddle.y + this.paddleHeight / 2) - this.ball.y;
+            const normalizedIntersectY = relativeIntersectY / (this.paddleHeight / 2);
+            const bounceAngle = normalizedIntersectY * this.ballMaxBounceAngle;
+            const speed = Math.hypot(this.ball.vx, this.ball.vy) || this.ballSpeed;
+            this.ball.vx = speed * Math.cos(bounceAngle) * (direction === 1 ? 1 : -1);
+            this.ball.vy = -speed * Math.sin(bounceAngle);
         }
     }
 
@@ -552,6 +568,7 @@ class SnakeGame {
         this.lastTick = 0;
         this.frameId = null;
         this.active = false;
+        this.directionQueue = [];
 
         this.resizeCanvas();
         this.resetGame();
@@ -562,10 +579,12 @@ class SnakeGame {
     bindEvents() {
         document.addEventListener('keydown', (e) => {
             if (!this.active) return;
-            if (e.key === 'ArrowUp' && this.direction.y !== 1) this.pendingDirection = { x: 0, y: -1 };
-            else if (e.key === 'ArrowDown' && this.direction.y !== -1) this.pendingDirection = { x: 0, y: 1 };
-            else if (e.key === 'ArrowLeft' && this.direction.x !== 1) this.pendingDirection = { x: -1, y: 0 };
-            else if (e.key === 'ArrowRight' && this.direction.x !== -1) this.pendingDirection = { x: 1, y: 0 };
+            const next = this.mapKeyToDirection(e.key);
+            if (!next) return;
+            const lastQueued = this.directionQueue[this.directionQueue.length - 1] || this.pendingDirection;
+            if (!this.isOpposite(lastQueued, next)) {
+                this.directionQueue.push(next);
+            }
         });
 
         this.startBtn.addEventListener('click', () => this.start());
@@ -603,6 +622,7 @@ class SnakeGame {
         this.score = 0;
         this.direction = { x: 1, y: 0 };
         this.pendingDirection = { x: 1, y: 0 };
+        this.directionQueue = [];
         const startX = Math.floor(this.cols / 4);
         const startY = Math.floor(this.rows / 2);
         this.snake = [
@@ -652,7 +672,13 @@ class SnakeGame {
 
     update() {
         if (!this.isRunning || this.gameOver) return;
-        this.direction = this.pendingDirection;
+        if (this.directionQueue.length > 0) {
+            const next = this.directionQueue.shift();
+            if (!this.isOpposite(this.direction, next)) {
+                this.direction = next;
+                this.pendingDirection = next;
+            }
+        }
         const newHead = {
             x: this.snake[0].x + this.direction.x,
             y: this.snake[0].y + this.direction.y
@@ -678,6 +704,18 @@ class SnakeGame {
         } else {
             this.snake.pop();
         }
+    }
+
+    mapKeyToDirection(key) {
+        if (key === 'ArrowUp') return { x: 0, y: -1 };
+        if (key === 'ArrowDown') return { x: 0, y: 1 };
+        if (key === 'ArrowLeft') return { x: -1, y: 0 };
+        if (key === 'ArrowRight') return { x: 1, y: 0 };
+        return null;
+    }
+
+    isOpposite(a, b) {
+        return a && b && a.x === -b.x && a.y === -b.y;
     }
 
     placeFood() {
