@@ -30,6 +30,10 @@ class App {
         this.tasksViewBtn.classList.toggle('active', isTasks);
         this.gamesViewBtn.classList.toggle('active', !isTasks);
 
+        if (!isTasks) {
+            this.pongGame.onShow();
+            this.snakeGame.onShow();
+        }
         this.pongGame.setActive(!isTasks);
         this.snakeGame.setActive(!isTasks);
     }
@@ -376,6 +380,7 @@ class PongGame {
     setActive(isActive) {
         this.active = isActive;
         if (isActive && !this.frameId) {
+            this.resizeCanvas(true);
             this.lastTime = performance.now();
             this.frameId = requestAnimationFrame((t) => this.loop(t));
         } else if (!isActive && this.frameId) {
@@ -384,9 +389,14 @@ class PongGame {
         }
     }
 
-    resizeCanvas() {
+    onShow() {
+        // Ensure canvas has real dimensions once the tab is visible
+        this.resizeCanvas(true);
+    }
+
+    resizeCanvas(forceCenter = false) {
         const rect = this.canvas.getBoundingClientRect();
-        const width = rect.width;
+        const width = rect.width > 40 ? rect.width : 700;
         const height = Math.max(240, Math.min(420, Math.round(width * 0.55)));
         this.canvas.width = width;
         this.canvas.height = height;
@@ -403,6 +413,9 @@ class PongGame {
         if (this.ball) {
             this.ball.x = Math.min(Math.max(this.ball.x, this.ballSize / 2), this.width - this.ballSize / 2);
             this.ball.y = Math.min(Math.max(this.ball.y, this.ballSize / 2), this.height - this.ballSize / 2);
+            if (forceCenter) {
+                this.resetBall(Math.sign(this.ball.vx) || 1);
+            }
         }
         this.draw();
     }
@@ -565,14 +578,20 @@ class SnakeGame {
             cancelAnimationFrame(this.frameId);
             this.frameId = null;
         } else if (isActive && this.isRunning && !this.frameId) {
+            this.resizeCanvas();
             this.lastTick = performance.now();
             this.frameId = requestAnimationFrame((t) => this.loop(t));
         }
     }
 
+    onShow() {
+        this.resizeCanvas();
+        this.draw();
+    }
+
     resizeCanvas() {
         const rect = this.canvas.getBoundingClientRect();
-        const width = rect.width;
+        const width = rect.width > 40 ? rect.width : 700;
         const height = Math.max(220, Math.min(420, Math.round(width * 0.55)));
         this.cols = Math.max(12, Math.floor(width / this.cellSize));
         this.rows = Math.max(12, Math.floor(height / this.cellSize));
@@ -673,11 +692,15 @@ class SnakeGame {
     }
 
     draw() {
-        this.ctx.fillStyle = '#fdfdfd';
+        // Background gradient
+        const bg = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+        bg.addColorStop(0, '#f8f9ff');
+        bg.addColorStop(1, '#eef2ff');
+        this.ctx.fillStyle = bg;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // grid lines
-        this.ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+        // subtle grid
+        this.ctx.strokeStyle = 'rgba(102,126,234,0.08)';
         for (let x = 0; x <= this.cols; x++) {
             this.ctx.beginPath();
             this.ctx.moveTo(x * this.cellSize, 0);
@@ -691,20 +714,34 @@ class SnakeGame {
             this.ctx.stroke();
         }
 
-        // snake
-        this.ctx.fillStyle = '#667eea';
+        // snake with rounded segments
         this.snake.forEach((seg, index) => {
-            const opacity = 1 - index * 0.02;
-            this.ctx.fillStyle = `rgba(102, 126, 234, ${Math.max(0.4, opacity)})`;
-            this.ctx.fillRect(seg.x * this.cellSize, seg.y * this.cellSize, this.cellSize, this.cellSize);
+            const x = seg.x * this.cellSize;
+            const y = seg.y * this.cellSize;
+            const radius = Math.min(6, this.cellSize / 3);
+            const opacity = Math.max(0.35, 1 - index * 0.02);
+            this.ctx.fillStyle = `rgba(102, 126, 234, ${opacity})`;
+            this.drawRoundedRect(x, y, this.cellSize, this.cellSize, radius);
+
+            // Head glow
+            if (index === 0) {
+                this.ctx.strokeStyle = 'rgba(118, 75, 162, 0.6)';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(x + 2, y + 2, this.cellSize - 4, this.cellSize - 4);
+            }
         });
 
         // food
         if (this.food) {
-            this.ctx.fillStyle = '#ff6b6b';
-            const radius = this.cellSize / 2;
+            const centerX = this.food.x * this.cellSize + this.cellSize / 2;
+            const centerY = this.food.y * this.cellSize + this.cellSize / 2;
+            const radius = this.cellSize / 2 - 2;
+            const gradient = this.ctx.createRadialGradient(centerX, centerY, 4, centerX, centerY, radius);
+            gradient.addColorStop(0, '#ffb347');
+            gradient.addColorStop(1, '#ff6b6b');
+            this.ctx.fillStyle = gradient;
             this.ctx.beginPath();
-            this.ctx.arc(this.food.x * this.cellSize + radius, this.food.y * this.cellSize + radius, radius - 2, 0, Math.PI * 2);
+            this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             this.ctx.fill();
         }
 
@@ -716,6 +753,21 @@ class SnakeGame {
             this.ctx.textAlign = 'center';
             this.ctx.fillText('Game Over - Restart to play again', this.canvas.width / 2, this.canvas.height / 2);
         }
+    }
+
+    drawRoundedRect(x, y, w, h, r) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + r, y);
+        this.ctx.lineTo(x + w - r, y);
+        this.ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        this.ctx.lineTo(x + w, y + h - r);
+        this.ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        this.ctx.lineTo(x + r, y + h);
+        this.ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        this.ctx.lineTo(x, y + r);
+        this.ctx.quadraticCurveTo(x, y, x + r, y);
+        this.ctx.closePath();
+        this.ctx.fill();
     }
 }
 
