@@ -1,37 +1,34 @@
 # Task Manager Web App
 
-A simple, modern task management web application built with vanilla HTML, CSS, and JavaScript.
+A lightweight, offline-ready to-do app with due dates and a calendar view, built with vanilla HTML, CSS, and JavaScript.
 
 ## Features
 
-- ✅ Add new tasks
-- ✅ Mark tasks as complete/incomplete
-- ✅ Delete individual tasks
-- ✅ Clear all completed tasks
-- ✅ Persistent storage (tasks saved in browser localStorage)
-- ✅ Responsive design
-- ✅ Modern, beautiful UI with smooth animations
+- ✅ Add tasks with required title and due date; include optional notes
+- ✅ Month calendar highlights days with tasks; click a date to filter tasks for that day and clear the filter anytime
+- ✅ Task list shows due dates, supports complete/incomplete toggle, delete, and clear completed
+- ✅ Persistent storage in browser `localStorage` (including due dates and notes)
+- ✅ Responsive layout for desktop and mobile
 
-## How to Use
+## How to Run Locally
 
-1. Open `index.html` in your web browser
-2. Type a task in the input field and click "Add Task" or press Enter
-3. Check the checkbox to mark a task as completed
-4. Click "Delete" to remove a task
-5. Click "Clear Completed" to remove all completed tasks at once
+1. Option 1: Double-click `index.html` (or open it in your browser) — everything runs locally with no backend.
+2. Option 2: Serve the folder with a simple local server, e.g.:
+   ```bash
+   python3 -m http.server 8000
+   ```
+   then visit `http://localhost:8000`.
+
+## Using the App
+
+1. Enter a task title and choose a due date (both required); add notes if you like.
+2. Click **Add Task** (or press Enter while focused on a field).
+3. Use the calendar to spot dates with tasks. Click a date to filter the list to that day, and use **Clear date filter** to show everything again.
+4. Toggle completion with the checkbox, delete individual tasks, or use **Clear Completed** to remove all finished tasks.
 
 ## Files
 
 - `index.html` - Main HTML structure
 - `styles.css` - Styling and animations
 - `script.js` - Application logic and interactivity
-- `README.md` - This file
-
-## Technologies
-
-- HTML5
-- CSS3 (with animations and gradients)
-- Vanilla JavaScript (ES6+)
-- LocalStorage API for data persistence
-
-No build tools or dependencies required - just open the HTML file in a browser!
+- `README.md` - Project overview and instructions

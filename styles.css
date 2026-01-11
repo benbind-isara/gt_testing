@@ -6,7 +6,9 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), transparent 25%), 
+                radial-gradient(circle at 80% 0%, rgba(255,255,255,0.06), transparent 20%),
+                linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -19,7 +21,7 @@ body {
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     width: 100%;
-    max-width: 600px;
+    max-width: 1100px;
     padding: 40px;
     animation: slideIn 0.5s ease-out;
 }
@@ -51,14 +53,25 @@ h1 {
     font-size: 1rem;
 }
 
-.input-section {
-    display: flex;
-    gap: 10px;
+.input-card {
+    background: #f8f9ff;
+    border: 1px solid #e5e7ff;
+    border-radius: 16px;
+    padding: 16px;
     margin-bottom: 20px;
 }
 
+.input-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-areas:
+        "title due"
+        "notes add";
+    gap: 12px;
+}
+
 #taskInput {
-    flex: 1;
+    grid-area: title;
     padding: 15px 20px;
     border: 2px solid #e0e0e0;
     border-radius: 10px;
@@ -66,14 +79,40 @@ h1 {
     transition: all 0.3s ease;
 }
 
-#taskInput:focus {
+#dueDateInput {
+    grid-area: due;
+    padding: 15px 18px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+#notesInput {
+    grid-area: notes;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    resize: vertical;
+    min-height: 52px;
+    transition: all 0.3s ease;
+}
+
+#taskInput:focus,
+#dueDateInput:focus,
+#notesInput:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+#taskInput:focus {
+}
+
 #addTaskBtn {
-    padding: 15px 30px;
+    grid-area: add;
+    padding: 15px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
@@ -93,12 +132,128 @@ h1 {
     transform: translateY(0);
 }
 
+.input-hint {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+.validation-message {
+    color: #d64545;
+    min-height: 20px;
+    font-size: 0.9rem;
+    margin-top: 6px;
+}
+
+.planner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.calendar-card, .tasks-card {
+    background: #f8f9fa;
+    border: 1px solid #ececec;
+    border-radius: 16px;
+    padding: 18px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.calendar-header h2 {
+    font-size: 1.4rem;
+    color: #333;
+}
+
+.calendar-subtitle {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.icon-btn {
+    background: white;
+    border: 1px solid #e0e0e0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.icon-btn:hover {
+    background: #f0f0ff;
+    transform: translateY(-2px);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.calendar-day {
+    background: white;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 70px;
+}
+
+.calendar-day:hover {
+    border-color: #667eea;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+}
+
+.calendar-day.has-task::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #667eea;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.calendar-day.selected {
+    border-color: #764ba2;
+    box-shadow: 0 0 0 2px rgba(118, 75, 162, 0.15);
+}
+
+.calendar-day.placeholder {
+    cursor: default;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.calendar-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+    color: #555;
+    gap: 12px;
+}
+
 .stats {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding: 10px 0;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
     border-bottom: 2px solid #f0f0f0;
 }
 
@@ -124,13 +279,21 @@ h1 {
     background: rgba(102, 126, 234, 0.1);
 }
 
+.clear-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .task-list {
     list-style: none;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .task-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 15px;
     padding: 15px;
     margin-bottom: 10px;
@@ -176,6 +339,8 @@ h1 {
     flex: 1;
     color: #333;
     font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .delete-btn {
@@ -192,6 +357,17 @@ h1 {
 .delete-btn:hover {
     background: #ff5252;
     transform: scale(1.05);
+}
+
+.task-meta {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.task-notes {
+    margin-top: 4px;
+    color: #555;
+    font-size: 0.95rem;
 }
 
 .empty-state {
@@ -217,10 +393,19 @@ h1 {
     }
     
     .input-section {
-        flex-direction: column;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "title"
+            "due"
+            "notes"
+            "add";
     }
     
     #addTaskBtn {
         width: 100%;
+    }
+    
+    .planner {
+        grid-template-columns: 1fr;
     }
 }
